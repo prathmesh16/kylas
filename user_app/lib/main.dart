@@ -1,7 +1,3 @@
-// Copyright 2018 The Flutter team. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -13,17 +9,24 @@ import './myWidgets/PopUpDialogAddUser.dart';
 
 void main() => runApp(MaterialApp(home:MyApp()));
 
-Future<User> fetchUser() async {
-
-  final http.Response response = await http.get("https://gorest.co.in/public-api/users/1");
-
-    var tmp = json.decode(response.body);
-
-    return User.fromJson(tmp['data']);
-  
+//converting response data into json list
+List<User> parseUsersList(String body){
+  var response = json.decode(body);
+  var data = response["data"] as List;
+  return data.map<User>((json) => User.fromJson(json)).toList();
 }
 
-
+//GET request to fetch users list
+Future < List<User>> fetchUserList(int page) async{
+  
+  final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}");
+  return compute(parseUsersList,response.body);
+}
+//Application 
+class MyApp extends StatefulWidget {
+  @override
+  _MyAppState createState() =>_MyAppState();
+}
 
 class _MyAppState extends State<MyApp> {
 
@@ -35,7 +38,7 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: Text('User App'),
         ),
-        body: FavouriteWidget(),
+        body: MainScreen(),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               showDialog(
@@ -51,29 +54,17 @@ class _MyAppState extends State<MyApp> {
   }
 }
 
-List<User> parseUsersList(String body){
-  var response = json.decode(body);
-  var data = response["data"] as List;
-  return data.map<User>((json) => User.fromJson(json)).toList();
-}
-
-Future < List<User>> fetchUserList(int page) async{
-  
-  final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}");
-  return compute(parseUsersList,response.body);
-}
-
-class MyApp extends StatefulWidget {
+//MainScreen (Scroll View with paging and users data)
+class MainScreen extends StatefulWidget{
   @override
-  _MyAppState createState() =>_MyAppState();
+  _MainScreenState createState() =>_MainScreenState();
 }
-class FavouriteWidget extends StatefulWidget{
-  @override
-  _FavouriteWidgetState createState() =>_FavouriteWidgetState();
-}
-class _FavouriteWidgetState extends State<FavouriteWidget>{
-  int _pageNo = 1;
+class _MainScreenState extends State<MainScreen>{
+  int pageNo = 1;
+  int totalPages ;
   Future<List<User>> _futureUserList ;
+
+  //storage to cache users data
   var cachedUserList = <int, Future<List<User>>>{};
 
   @override
@@ -87,15 +78,15 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
 
   void nextPage(){
     setState(() {
-      _pageNo+=1;
-      if(cachedUserList[_pageNo]!=null)
+      pageNo+=1;
+      if(cachedUserList[pageNo]!=null)
       {
-        _futureUserList=cachedUserList[_pageNo];
+        _futureUserList=cachedUserList[pageNo];
       }
       else
       {
-        _futureUserList =fetchUserList(_pageNo);
-        cachedUserList[_pageNo]=_futureUserList;
+        _futureUserList =fetchUserList(pageNo);
+        cachedUserList[pageNo]=_futureUserList;
       }
     });
   }
@@ -103,17 +94,17 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
   void previousPage()
   {
     setState(() {
-      if(_pageNo>1)
+      if(pageNo>1)
       {
-        _pageNo-=1;
-        if(cachedUserList[_pageNo]!=null)
+        pageNo-=1;
+        if(cachedUserList[pageNo]!=null)
         {
-          _futureUserList=cachedUserList[_pageNo];
+          _futureUserList=cachedUserList[pageNo];
         }
         else
         {
-          _futureUserList =fetchUserList(_pageNo);
-          cachedUserList[_pageNo]=_futureUserList;
+          _futureUserList =fetchUserList(pageNo);
+          cachedUserList[pageNo]=_futureUserList;
         }
       }
     });
@@ -122,25 +113,26 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
   void changePage(int page)
   {
      setState(() {
-      _pageNo=page;
-      if(cachedUserList[_pageNo]!=null)
+      pageNo=page;
+      if(cachedUserList[pageNo]!=null)
       {
-        _futureUserList=cachedUserList[_pageNo];
+        _futureUserList=cachedUserList[pageNo];
       }
       else
       {
-        _futureUserList =fetchUserList(_pageNo);
-        cachedUserList[_pageNo]=_futureUserList;
+        _futureUserList =fetchUserList(pageNo);
+        cachedUserList[pageNo]=_futureUserList;
       }
     });
   }
 
   void _refreshPage(){
     setState(() {
-        _futureUserList =fetchUserList(_pageNo);
-        cachedUserList[_pageNo]=_futureUserList;
+        _futureUserList =fetchUserList(pageNo);
+        cachedUserList[pageNo]=_futureUserList;
     });
   }
+
   @override
   Widget build(BuildContext context)
   {
@@ -154,6 +146,7 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
                     shrinkWrap: true,
                     physics: ScrollPhysics(),
                     children: <Widget>[
+                      //Paging Row implementation
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
@@ -162,25 +155,45 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
                             onPressed:previousPage
                             ),
                             Text('Pages    '),
-                            Text(
-                              '${_pageNo}',
-                              style: TextStyle(color:Colors.blue[800],fontWeight: FontWeight.w900,fontSize: 20) ,
-                              ),
-                            new GestureDetector(
-                              child: Text('${_pageNo+1}'),
-                              onTap:(){ changePage(_pageNo+1); },
+                            Container(
+                              height: 28,
+                              width: 25,
+                              child: Text(
+                                '${pageNo}',
+                                style: TextStyle(color:Colors.blue[800],fontWeight: FontWeight.w900,fontSize: 20) ,
+                                ),
                             ),
                             new GestureDetector(
-                              child: Text('${_pageNo+2}'),
-                              onTap:(){ changePage(_pageNo+2);},
+                              child: Container(
+                                height: 20,
+                                width: 20,
+                                child: Text('${pageNo+1}')
+                                ),
+                              onTap:(){ changePage(pageNo+1); },
                             ),
                             new GestureDetector(
-                              child: Text('${_pageNo+3}'),
-                              onTap:(){ changePage(_pageNo+3);},
+                             child: Container(
+                                height: 20,
+                                width: 20,
+                                child: Text('${pageNo+2}')
+                                ),
+                              onTap:(){ changePage(pageNo+2);},
                             ),
                             new GestureDetector(
-                              child: Text('${_pageNo+4}'),
-                              onTap:(){ changePage(_pageNo+4);},
+                             child: Container(
+                                height: 20,
+                                width: 20,
+                                child: Text('${pageNo+3}')
+                                ),
+                              onTap:(){ changePage(pageNo+3);},
+                            ),
+                            new GestureDetector(
+                              child: Container(
+                                height: 20,
+                                width: 20,
+                                child: Text('${pageNo+4}')
+                                ),
+                              onTap:(){ changePage(pageNo+4);},
                             ),
                           IconButton(
                             icon: Icon(Icons.arrow_forward),
@@ -188,6 +201,7 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
                             ),
                         ],
                       ),
+                      //ListView of users data
                       Container(
                         margin: EdgeInsets.symmetric(vertical: 5),
                         width: MediaQuery.of(context).size.width,
@@ -197,7 +211,7 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
                           itemCount: snapshot.data.length,
                           itemBuilder:(context,index){
                             return UserCard(context:context,user:snapshot.data[index],callback:(val){
-                              cachedUserList[_pageNo].then((value) => {
+                              cachedUserList[pageNo].then((value) => {
                                 for(int i=0;i<value.length;i++)
                                 {
                                   if(value[i].id==val.id)
@@ -205,7 +219,7 @@ class _FavouriteWidgetState extends State<FavouriteWidget>{
                                     value[i]=val
                                   }
                                 },
-                                cachedUserList[_pageNo] = Future<List<User>>.value(value)
+                                cachedUserList[pageNo] = Future<List<User>>.value(value)
                               });
                             });
                           }
