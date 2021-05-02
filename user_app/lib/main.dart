@@ -9,7 +9,7 @@ import './models/User.dart';
 import './myWidgets/UserCard.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import './myWidgets/popUpDialog.dart';
+import './myWidgets/PopUpDialogAddUser.dart';
 
 void main() => runApp(MaterialApp(home:MyApp()));
 
@@ -38,10 +38,10 @@ class _MyAppState extends State<MyApp> {
         body: FavouriteWidget(),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
-            //   showDialog(
-            //   context: context,
-            //   builder: (BuildContext context) => PopUpDialog(context:context,user:null),
-            //  );
+              showDialog(
+              context: context,
+              builder: (BuildContext context) => PopUpDialogAddUser(context:context),
+             );
             },
             child: Icon(Icons.add),
             backgroundColor: Colors.blue,

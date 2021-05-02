@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:toast/toast.dart';
 
-Future<User> updateUserRequest(User user,BuildContext context) async {
-    final http.Response response = await http.put("https://gorest.co.in/public-api/users/${user.id}",
+Future<void> addUserRequest(User user,BuildContext context) async {
+    final http.Response response = await http.post("https://gorest.co.in/public-api/users",
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'Authorization':'Bearer 75d4b33b09d291e83932a38ff386a1eeee39b813d355d88bc09a30dd9f9489ef'
@@ -19,70 +19,59 @@ Future<User> updateUserRequest(User user,BuildContext context) async {
       }),
     );
     var tmp = json.decode(response.body);
-    if(tmp["code"]==200)
+    if(tmp["code"]==201)
     {
-      Toast.show("User updated!", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
-      return User.fromJson(tmp["data"]);
+      Toast.show("User added!", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
+      Navigator.of(context).pop();
     }
     else
     {
-      Toast.show(tmp["data"]["message"], context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
-      Navigator.of(context).pop();
-      return null;
+      try{
+        Toast.show(tmp["data"][0]["field"]+" "+tmp["data"][0]["message"], context, duration: Toast.LENGTH_SHORT, gravity:  Toast.CENTER);
+      }
+      catch(e){
+        Toast.show("Something went wrong please try again!", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.CENTER);
+      }
     }
-    
 }
 
-class PopUpDialog extends StatefulWidget{
-  BuildContext context;
-  User user;
+class PopUpDialogAddUser extends StatefulWidget{
+  final BuildContext context;
 
-  var callback;
-  
-  PopUpDialog({this.context,this.user,this.callback});
+  PopUpDialogAddUser({this.context});
   
   @override
-  _MyPopUpDialog createState() => _MyPopUpDialog(context:context,user: user,callback:callback);
+  _MyPopUpDialogAddUser createState() => _MyPopUpDialogAddUser(context:context);
 }
 
-class _MyPopUpDialog extends State<PopUpDialog>{
-  User user;
+class _MyPopUpDialogAddUser extends State<PopUpDialogAddUser>{
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   bool _isActive = false;
   String dropdownValue = 'Gender';
   BuildContext context;
-  var callback ;
 
-  _MyPopUpDialog({this.context,this.user,this.callback});
+  _MyPopUpDialogAddUser({this.context});
   
   @override
   void initState() {
     super.initState();
-    nameController.text = user.name;
-    emailController.text = user.email;
-    _isActive = (user.status=="Active")?true:false;
-    dropdownValue = user.gender;
   }
 
-  void updateUser()async{
-    User updatedUser = new User(
-        id:user.id,
+  void addUser()async{
+    User user = new User(
         name:nameController.text,
         email:emailController.text,
         status: (_isActive)?"Active":"Inactive",
         gender: dropdownValue
       );
-      updateUserRequest(updatedUser, context).then((value) => {  
-         callback(value),
-         Navigator.of(context).pop()
-      });
+      addUserRequest(user, context);
   }
 
   @override
   Widget build(BuildContext context) {
       return new AlertDialog(
-      title: const Text('Edit User'),
+      title: const Text('Add New User'),
       content: new Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,12 +134,12 @@ class _MyPopUpDialog extends State<PopUpDialog>{
       actions: <Widget>[
         new TextButton(
           onPressed : (){
-            updateUser();
+            addUser();
              },
           style: TextButton.styleFrom(
             primary:Theme.of(context).primaryColor
           ),
-          child: const Text('Save'),
+          child: const Text('Add'),
         ),
         new TextButton(
           onPressed: () {

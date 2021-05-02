@@ -22,8 +22,8 @@ class _MyUserCard extends State<UserCard>
   
   String limitName(String name)
   {
-      if(name.length>25)
-        return name.substring(0,25)+"...";
+      if(name.length>23)
+        return name.substring(0,23)+"...";
       return name;  
   }
 
