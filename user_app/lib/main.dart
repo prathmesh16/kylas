@@ -37,6 +37,12 @@ class _MyAppState extends State<MyApp> {
       home: Scaffold(
         appBar: AppBar(
           title: Text('User App'),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.filter_alt_sharp,size: 30,),
+               onPressed: (){}
+              )
+          ],
         ),
         body: MainScreen(),
         floatingActionButton: FloatingActionButton(

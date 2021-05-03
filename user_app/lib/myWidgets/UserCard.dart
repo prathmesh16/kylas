@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import '../models/User.dart';
 import './PopUpDialog.dart';
 
@@ -41,11 +40,20 @@ class _MyUserCard extends State<UserCard>
       width: MediaQuery.of(context).size.width,
       margin: EdgeInsets.all(5),
       decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+            BoxShadow(
+              color: Colors.grey[300],
+              offset: Offset(0, 5),
+              blurRadius: 3.0,
+              spreadRadius: 1.0,
+            ),
+          ],
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Colors.grey[300],
-          width: 1,
-        ),
+        // border: Border.all(
+        //   color: Colors.grey[300],
+        //   width: 1,
+        // ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -60,34 +68,30 @@ class _MyUserCard extends State<UserCard>
                   limitName('${user.name}'),
                   style: TextStyle(fontSize: 20),
                 )
-              ),
+              ),    
               Row(
-                children: <Widget>[
-                  Container(
-                    height: 10,
-                    width: 10,
-                    margin: EdgeInsets.only(right:10),
-                    decoration: BoxDecoration(
-                      color:(user.status=="Active")?Colors.green:Colors.red,
-                      borderRadius: BorderRadius.circular(5) 
-                    ),
+                children: [
+                  IconButton(
+                    iconSize: 20,
+                    icon: Icon(Icons.info_outline,color: Colors.grey[500]),
+                    alignment: Alignment.centerRight,
                   ),
-                IconButton(
-                  icon: Icon(Icons.edit),
-                   onPressed:(){ 
-                     showDialog(
-                      context: homeContext,
-                      builder: (BuildContext context) => PopUpDialog(context:context,user: user,callback: (updatedUser){
-                        setState((){
-                          user=updatedUser;
-                          callback(updatedUser);
-                        });
-                      }),
-                    );
-                   }
-                   ),
+                  IconButton(
+                    icon: Icon(Icons.more_vert,color: Colors.grey[700],),
+                      onPressed:(){ 
+                        showDialog(
+                        context: homeContext,
+                        builder: (BuildContext context) => PopUpDialog(context:context,user: user,callback: (updatedUser){
+                          setState((){
+                            user=updatedUser;
+                            callback(updatedUser);
+                          });
+                        }),
+                      );
+                      }
+                    ),
                 ],
-              ),
+              ),    
             ],
           ),
           Container(
@@ -101,11 +105,23 @@ class _MyUserCard extends State<UserCard>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
                 Text('${user.gender}'),
-                Text('${user.status}')
+                Row(
+                  children: [
+                    Text('${user.status}'),
+                    Container(
+                      height: 10,
+                      width: 10,
+                      margin: EdgeInsets.only(left:10),
+                      decoration: BoxDecoration(
+                        color:(user.status=="Active")?Colors.green:Colors.red,
+                        borderRadius: BorderRadius.circular(5) 
+                      ),
+                    ),
+                  ],
+                )
               ],
             ),
           ),
-          
         ],
       ),
     );

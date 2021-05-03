@@ -21,13 +21,24 @@ Future<User> updateUserRequest(User user,BuildContext context) async {
     var tmp = json.decode(response.body);
     if(tmp["code"]==200)
     {
-      Toast.show("User updated!", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
-      return User.fromJson(tmp["data"]);
+       try{
+        Toast.show("User updated!", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
+         return User.fromJson(tmp["data"]);
+      }
+      catch(e){
+        Toast.show("Something went wrong please try again!", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.CENTER);
+        return null;
+      }
+     
     }
     else
     {
-      Toast.show(tmp["data"]["message"], context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
-      Navigator.of(context).pop();
+      try{
+        Toast.show(tmp["data"][0]["field"]+" "+tmp["data"][0]["message"], context, duration: Toast.LENGTH_SHORT, gravity:  Toast.CENTER);
+      }
+      catch(e){
+        Toast.show("Something went wrong please try again!", context, duration: Toast.LENGTH_SHORT, gravity:  Toast.CENTER);
+      }
       return null;
     }
     
@@ -68,14 +79,15 @@ class _MyPopUpDialog extends State<PopUpDialog>{
   void updateUser()async{
     User updatedUser = new User(
         id:user.id,
-        name:nameController.text,
-        email:emailController.text,
+        name:(nameController.text)??"",
+        email:emailController.text??"",
         status: (_isActive)?"Active":"Inactive",
         gender: dropdownValue
       );
-      updateUserRequest(updatedUser, context).then((value) => {  
-         callback(value),
-         Navigator.of(context).pop()
+      updateUserRequest(updatedUser, context).then((value) => { 
+        if(value!=null) 
+          callback(value),
+        Navigator.of(context).pop()
       });
   }
 
