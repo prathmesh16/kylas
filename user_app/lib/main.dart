@@ -163,9 +163,9 @@ class _MainScreenState extends State<MainScreen>{
     setState(() {
       filters.clear();
       filters.add(["status","Active"]);
-      filters.add(["gender","Male"]);
       cachedUserList.clear();
       _futureUserList = fetchUserList(filters,pageNo);
+      cachedUserList[pageNo] = _futureUserList;
     });
    
   }
@@ -248,16 +248,32 @@ class _MainScreenState extends State<MainScreen>{
                           itemCount: snapshot.data.length,
                           itemBuilder:(context,index){
                             return UserCard(context:context,user:snapshot.data[index],callback:(val){
-                              cachedUserList[pageNo].then((value) => {
-                                for(int i=0;i<value.length;i++)
-                                {
-                                  if(value[i].id==val.id)
+                              bool flag= true;
+                              for(List<String> filter in filters)
+                              {
+                                if(!filter.contains(val.gender) && !filter.contains(val.status))
+                                  flag = false; 
+                              }
+                              if(filters.length==0 || flag)
+                              {
+                                cachedUserList[pageNo].then((value) => {
+                                  for(int i=0;i<value.length;i++)
                                   {
-                                    value[i]=val
-                                  }
-                                },
-                                cachedUserList[pageNo] = Future<List<User>>.value(value)
-                              });
+                                    if(value[i].id==val.id)
+                                    {
+                                      value[i]=val
+                                    }
+                                  },
+                                  cachedUserList[pageNo] = Future<List<User>>.value(value)
+                                });
+                              }
+                              else
+                              {
+                                setState(() {
+                                  _futureUserList = fetchUserList(filters,pageNo);
+                                  cachedUserList[pageNo] = _futureUserList;
+                                });
+                              }
                             });
                           }
                         ),
