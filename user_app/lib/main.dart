@@ -17,11 +17,20 @@ List<User> parseUsersList(String body){
 }
 
 //GET request to fetch users list
-Future < List<User>> fetchUserList(int page) async{
-  
-  final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}");
+Future < List<User>> fetchUserList(List<List<String>> filters,int page) async{
+  String str="&&";
+  for(int i=0;i<filters.length;i++)
+  {
+    if(i>0)
+    {
+      str+="&&";
+    }
+    str += filters[i][0]+"="+filters[i][1];
+  }
+  final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}${(str.length>2)?str:''}");
   return compute(parseUsersList,response.body);
 }
+
 //Application 
 class MyApp extends StatefulWidget {
   @override
@@ -29,6 +38,12 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+
+  final GlobalKey<_MainScreenState> _mainScreenState = GlobalKey<_MainScreenState>();
+  void applyFilters()
+  {
+    _mainScreenState.currentState.applyFilters();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,11 +55,13 @@ class _MyAppState extends State<MyApp> {
           actions: [
             IconButton(
               icon: Icon(Icons.filter_alt_sharp,size: 30,),
-               onPressed: (){}
+               onPressed: (){
+                applyFilters();
+               }
               )
           ],
         ),
-        body: MainScreen(),
+        body: MainScreen(key:_mainScreenState),
         floatingActionButton: FloatingActionButton(
             onPressed: () {
               showDialog(
@@ -62,6 +79,8 @@ class _MyAppState extends State<MyApp> {
 
 //MainScreen (Scroll View with paging and users data)
 class MainScreen extends StatefulWidget{
+
+  MainScreen({Key key}) : super(key:key);   
   @override
   _MainScreenState createState() =>_MainScreenState();
 }
@@ -69,7 +88,7 @@ class _MainScreenState extends State<MainScreen>{
   int pageNo = 1;
   int totalPages ;
   Future<List<User>> _futureUserList ;
-
+  List<List<String>> filters = [];
   //storage to cache users data
   var cachedUserList = <int, Future<List<User>>>{};
 
@@ -78,7 +97,7 @@ class _MainScreenState extends State<MainScreen>{
     super.initState();
 
     // initial load
-     _futureUserList = fetchUserList(1);
+     _futureUserList = fetchUserList(filters,1);
      cachedUserList[1]=_futureUserList;
   }
 
@@ -91,7 +110,7 @@ class _MainScreenState extends State<MainScreen>{
       }
       else
       {
-        _futureUserList =fetchUserList(pageNo);
+        _futureUserList =fetchUserList(filters,pageNo);
         cachedUserList[pageNo]=_futureUserList;
       }
     });
@@ -109,7 +128,7 @@ class _MainScreenState extends State<MainScreen>{
         }
         else
         {
-          _futureUserList =fetchUserList(pageNo);
+          _futureUserList =fetchUserList(filters,pageNo);
           cachedUserList[pageNo]=_futureUserList;
         }
       }
@@ -126,17 +145,29 @@ class _MainScreenState extends State<MainScreen>{
       }
       else
       {
-        _futureUserList =fetchUserList(pageNo);
+        _futureUserList =fetchUserList(filters,pageNo);
         cachedUserList[pageNo]=_futureUserList;
       }
     });
   }
 
-  void _refreshPage(){
+  void refreshPage(){
     setState(() {
-        _futureUserList =fetchUserList(pageNo);
+        _futureUserList =fetchUserList(filters,pageNo);
         cachedUserList[pageNo]=_futureUserList;
     });
+  }
+
+  void applyFilters()
+  {
+    setState(() {
+      filters.clear();
+      filters.add(["status","Active"]);
+      filters.add(["gender","Male"]);
+      cachedUserList.clear();
+      _futureUserList = fetchUserList(filters,pageNo);
+    });
+   
   }
 
   @override
@@ -233,7 +264,7 @@ class _MainScreenState extends State<MainScreen>{
                       ),
                     ],
                   ),
-                  onRefresh:()async{ _refreshPage();},
+                  onRefresh:()async{ refreshPage();},
                 );
                 } else if (snapshot.hasError) {
                   return Text("${snapshot.error}");
