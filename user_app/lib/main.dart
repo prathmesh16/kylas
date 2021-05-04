@@ -67,19 +67,34 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: Text('User App'),
           actions: [
-            IconButton(
-              icon: Icon(Icons.filter_alt_sharp,size: 30,),
-               onPressed: (){
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) => PopUpDialogFilters(
-                    context:context,
-                    callback:applyFilters,
-                    filters: _mainScreenState.currentState.filters
+            new Stack(
+              children:<Widget> [
+                new IconButton(
+                  icon: Icon(Icons.filter_alt_sharp,size: 30,),
+                  onPressed: (){
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) => PopUpDialogFilters(
+                        context:context,
+                        callback:applyFilters,
+                        filters: _mainScreenState.currentState.filters
+                      ),
+                    );
+                  }
+                ),
+                 Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red),
+                    alignment: Alignment.center,
+                    child: Text('0'),
                   ),
-                );
-               }
-              )
+                )
+              ],
+            )
+            
           ],
         ),
         body: MainScreen(key:_mainScreenState),

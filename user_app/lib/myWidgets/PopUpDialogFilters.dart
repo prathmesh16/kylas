@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PopUpDialogFilters extends StatefulWidget
 {
@@ -19,6 +20,7 @@ class _MyPopUpDialogFilters extends State<PopUpDialogFilters>
 {
   final BuildContext context;
   HashMap<String,String> filters;
+  HashMap<String,String> cpyFilters = new HashMap<String,String>();
   var callback;
 
 _MyPopUpDialogFilters({this.context,this.callback,this.filters});
@@ -44,6 +46,7 @@ _MyPopUpDialogFilters({this.context,this.callback,this.filters});
         _statusFilter=value;
       if(key == "gender")
         _genderFilter=value;  
+      cpyFilters[key]=value;
     });
   }
 
@@ -90,75 +93,163 @@ _MyPopUpDialogFilters({this.context,this.callback,this.filters});
           children: <Widget>[
             Text("Gender"),
             Row(
-              children: <Widget>[
-                Radio<String>(
-                    value: "Male",
-                    groupValue: _genderFilter,
-                    onChanged: (String value) {
-                     handleGenderFilter(value);
-                    },
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FilterChip(
+                  backgroundColor: Colors.grey[300],
+                  avatar: CircleAvatar(
+                    backgroundColor: Colors.white,
+                    child: Icon(FontAwesomeIcons.mars)
                   ),
-                Text('Male  ',style: TextStyle(
-                  fontSize: 12
-                ),),
-                Radio<String>(
-                    value: "Female",
-                    groupValue: _genderFilter,
-                    onChanged: (String value) {
-                     handleGenderFilter(value);
-                    },
+                  label: Text("Male"),
+                  selected: filters.containsValue("Male"),
+                  selectedColor: Colors.grey,
+                  onSelected: (bool selected){
+                      if(selected){
+                        handleGenderFilter("Male");
+                      }
+                      else
+                      {
+                        handleGenderFilter("None");
+                      }
+                  }
                   ),
-                Text('Female ',style: TextStyle(
-                  fontSize: 12
-                ),),
-                Radio<String>(
-                    value: "None",
-                    groupValue: _genderFilter,
-                    onChanged: (String value) {
-                      handleGenderFilter(value);
-                    },
-                  ),
-                Text('None',style: TextStyle(
-                  fontSize: 12
-                ),),
+                  FilterChip(
+                    backgroundColor: Colors.grey[300],
+                    avatar: CircleAvatar(
+                      backgroundColor: Colors.white,
+                      child: Icon(FontAwesomeIcons.venus)
+                    ),
+                    label: Text("Female"),
+                    selected: filters.containsValue("Female"),
+                    selectedColor: Colors.grey,
+                    onSelected: (bool selected){
+                      if(selected){
+                        handleGenderFilter("Female");
+                      }
+                      else
+                      {
+                        handleGenderFilter("None");
+                      }
+                    }
+                    ),
               ],
             ),
             Text("Status"),
             Row(
-              children: <Widget>[
-                Radio<String>(
-                    value: "Active",
-                    groupValue: _statusFilter,
-                    onChanged: (String value) {
-                      handleStatusFilter(value);
-                      
-                    },
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                FilterChip(
+                  backgroundColor: Colors.grey[300],
+                  avatar: CircleAvatar(
+                    backgroundColor: Colors.green,
+                    child: Text("A",style: TextStyle(color: Colors.white),),
                   ),
-                Text('Active',style: TextStyle(
-                  fontSize: 12
-                ),),
-                Radio<String>(
-                    value: "Inactive",
-                    groupValue: _statusFilter,
-                    onChanged: (String value) {
-                      handleStatusFilter(value);
-                    },
+                  label: Text("Active"),
+                  selected: filters.containsValue("Active"),
+                  selectedColor: Colors.grey,
+                  onSelected: (bool selected){
+                      if(selected){
+                        handleStatusFilter("Active");
+                      }
+                      else
+                      {
+                        handleStatusFilter("None");
+                      }
+                  }
                   ),
-                Text('Inactive',style: TextStyle(
-                  fontSize: 12
-                ),),
-                Radio<String>(
-                    value: "None",
-                    groupValue: _statusFilter,
-                    onChanged: (String value) {
-                      handleStatusFilter(value);
-                    },
-                  ),
-                Text('None',style: TextStyle(
-                  fontSize: 12
-                ),),
+                  FilterChip(
+                    backgroundColor: Colors.grey[300],
+                    avatar: CircleAvatar(
+                      backgroundColor: Colors.red[300],
+                      child: Text("I",style: TextStyle(color: Colors.white),),
+                    ),
+                    label: Text("Inactive"),
+                    selected: filters.containsValue("Inactive"),
+                    selectedColor: Colors.grey,
+                    onSelected: (bool selected){
+                      if(selected){
+                        handleStatusFilter("Inactive");
+                      }
+                      else
+                      {
+                        handleStatusFilter("None");
+                      }
+                    }
+                    ),
               ],
-            )
+            ),
+            // Text("Gender"),
+            // Row(
+            //   children: <Widget>[
+            //     Radio<String>(
+            //         value: "Male",
+            //         groupValue: _genderFilter,
+            //         onChanged: (String value) {
+            //          handleGenderFilter(value);
+            //         },
+            //       ),
+            //     Text('Male  ',style: TextStyle(
+            //       fontSize: 12
+            //     ),),
+            //     Radio<String>(
+            //         value: "Female",
+            //         groupValue: _genderFilter,
+            //         onChanged: (String value) {
+            //          handleGenderFilter(value);
+            //         },
+            //       ),
+            //     Text('Female ',style: TextStyle(
+            //       fontSize: 12
+            //     ),),
+            //     Radio<String>(
+            //         value: "None",
+            //         groupValue: _genderFilter,
+            //         onChanged: (String value) {
+            //           handleGenderFilter(value);
+            //         },
+            //       ),
+            //     Text('None',style: TextStyle(
+            //       fontSize: 12
+            //     ),),
+            //   ],
+            // ),
+            // Text("Status"),
+            // Row(
+            //   children: <Widget>[
+            //     Radio<String>(
+            //         value: "Active",
+            //         groupValue: _statusFilter,
+            //         onChanged: (String value) {
+            //           handleStatusFilter(value);
+                      
+            //         },
+            //       ),
+            //     Text('Active',style: TextStyle(
+            //       fontSize: 12
+            //     ),),
+            //     Radio<String>(
+            //         value: "Inactive",
+            //         groupValue: _statusFilter,
+            //         onChanged: (String value) {
+            //           handleStatusFilter(value);
+            //         },
+            //       ),
+            //     Text('Inactive',style: TextStyle(
+            //       fontSize: 12
+            //     ),),
+            //     Radio<String>(
+            //         value: "None",
+            //         groupValue: _statusFilter,
+            //         onChanged: (String value) {
+            //           handleStatusFilter(value);
+            //         },
+            //       ),
+            //     Text('None',style: TextStyle(
+            //       fontSize: 12
+            //     ),),
+            //   ],
+            // )
           ],
        ),
      ),
@@ -175,7 +266,11 @@ _MyPopUpDialogFilters({this.context,this.callback,this.filters});
         ),
         new TextButton(
           onPressed : (){
-               Navigator.of(context).pop();
+              filters.clear();
+              cpyFilters.forEach((key, value) {
+                filters[key]=value;
+              });
+              Navigator.of(context).pop();
             },
           style: TextButton.styleFrom(
             primary:Theme.of(context).primaryColor
