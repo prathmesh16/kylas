@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -6,6 +8,7 @@ import './myWidgets/UserCard.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import './myWidgets/PopUpDialogAddUser.dart';
+import './myWidgets/PopUpDialogFilters.dart';
 
 void main() => runApp(MaterialApp(home:MyApp()));
 
@@ -17,16 +20,27 @@ List<User> parseUsersList(String body){
 }
 
 //GET request to fetch users list
-Future < List<User>> fetchUserList(List<List<String>> filters,int page) async{
+Future < List<User>> fetchUserList(HashMap<String,String> filters,int page) async{
   String str="&&";
-  for(int i=0;i<filters.length;i++)
-  {
+  // for(int i=0;i<filters.length;i++)
+  // {
+  //   if(i>0)
+  //   {
+  //     str+="&&";
+  //   }
+  //   str += filters[i][0]+"="+filters[i][1];
+  // }
+  int i=0;
+  
+  filters.forEach((key, value) {
     if(i>0)
     {
       str+="&&";
     }
-    str += filters[i][0]+"="+filters[i][1];
-  }
+    str += key+"="+value;
+    i++;
+  });
+
   final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}${(str.length>2)?str:''}");
   return compute(parseUsersList,response.body);
 }
@@ -40,9 +54,9 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
 
   final GlobalKey<_MainScreenState> _mainScreenState = GlobalKey<_MainScreenState>();
-  void applyFilters()
+  void applyFilters(HashMap<String,String> newFIlters)
   {
-    _mainScreenState.currentState.applyFilters();
+    _mainScreenState.currentState.applyFilters(newFIlters);
   }
 
   @override
@@ -56,7 +70,14 @@ class _MyAppState extends State<MyApp> {
             IconButton(
               icon: Icon(Icons.filter_alt_sharp,size: 30,),
                onPressed: (){
-                applyFilters();
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => PopUpDialogFilters(
+                    context:context,
+                    callback:applyFilters,
+                    filters: _mainScreenState.currentState.filters
+                  ),
+                );
                }
               )
           ],
@@ -88,7 +109,7 @@ class _MainScreenState extends State<MainScreen>{
   int pageNo = 1;
   int totalPages ;
   Future<List<User>> _futureUserList ;
-  List<List<String>> filters = [];
+  HashMap<String,String> filters = new HashMap<String, String>();
   //storage to cache users data
   var cachedUserList = <int, Future<List<User>>>{};
 
@@ -158,11 +179,10 @@ class _MainScreenState extends State<MainScreen>{
     });
   }
 
-  void applyFilters()
+  void applyFilters(HashMap<String,String> newFilters)
   {
     setState(() {
-      filters.clear();
-      filters.add(["status","Active"]);
+      filters = newFilters;
       cachedUserList.clear();
       _futureUserList = fetchUserList(filters,pageNo);
       cachedUserList[pageNo] = _futureUserList;
@@ -249,11 +269,13 @@ class _MainScreenState extends State<MainScreen>{
                           itemBuilder:(context,index){
                             return UserCard(context:context,user:snapshot.data[index],callback:(val){
                               bool flag= true;
-                              for(List<String> filter in filters)
-                              {
-                                if(!filter.contains(val.gender) && !filter.contains(val.status))
-                                  flag = false; 
-                              }
+                              // for(List<String> filter in filters)
+                              // {
+                              //   if(!filter.contains(val.gender) && !filter.contains(val.status))
+                              //     flag = false; 
+                              // }
+                              if(!filters.containsValue(val.gender) && !filters.containsValue(val.status))
+                                flag = false;
                               if(filters.length==0 || flag)
                               {
                                 cachedUserList[pageNo].then((value) => {
