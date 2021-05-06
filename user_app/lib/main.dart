@@ -2,6 +2,8 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:toast/toast.dart';
+import 'package:user_app/myWidgets/Pagination.dart';
 import 'dart:convert';
 import './models/User.dart';
 import './myWidgets/UserCard.dart';
@@ -19,31 +21,7 @@ List<User> parseUsersList(String body){
   return data.map<User>((json) => User.fromJson(json)).toList();
 }
 
-//GET request to fetch users list
-Future < List<User>> fetchUserList(HashMap<String,String> filters,int page) async{
-  String str="&&";
-  // for(int i=0;i<filters.length;i++)
-  // {
-  //   if(i>0)
-  //   {
-  //     str+="&&";
-  //   }
-  //   str += filters[i][0]+"="+filters[i][1];
-  // }
-  int i=0;
-  
-  filters.forEach((key, value) {
-    if(i>0)
-    {
-      str+="&&";
-    }
-    str += key+"="+value;
-    i++;
-  });
 
-  final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}${(str.length>2)?str:''}");
-  return compute(parseUsersList,response.body);
-}
 
 //Application 
 class MyApp extends StatefulWidget {
@@ -121,233 +99,208 @@ class MainScreen extends StatefulWidget{
   _MainScreenState createState() =>_MainScreenState();
 }
 class _MainScreenState extends State<MainScreen>{
-  int pageNo;
+  int _pageNo;
   int totalPages ;
-  Future<List<User>> _futureUserList ;
+  bool _hasMore;
+  bool _error;
+  bool _loading;
+  int _p =1;
+  final int _defaultUsersPerPageCount = 20;
+  List<User> _users;
+  final int _nextPageThreshold = 2;
   HashMap<String,String> filters = new HashMap<String, String>();
-  //storage to cache users data
-  var cachedUserList = <int, Future<List<User>>>{};
+
+
+  //GET request to fetch users list
+  Future <void> fetchUserList(HashMap<String,String> filters) async{
+    String str="&&";
+    int i=0;
+    
+    filters.forEach((key, value) {
+      if(i>0)
+      {
+        str+="&&";
+      }
+      str += key+"="+value;
+      i++;
+    });
+    try {
+      final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${_pageNo}${(str.length>2)?str:''}");
+      List<User> fetchedUsers =  parseUsersList(response.body);
+      setState(() {
+          _hasMore = fetchedUsers.length == _defaultUsersPerPageCount;
+          _loading = false;
+          _pageNo = _pageNo + 1;
+          _users.addAll(fetchedUsers);
+          Toast.show('${_pageNo}', context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
+      });
+    }
+    catch(e)
+    {
+        setState(() {
+          _loading = false;
+          _error = true;
+        });
+    }
+  }
+
+ ScrollController _scrollController ;
+  //  _scrollListner(){
+  //     // setState(() {
+  //     //     _p=(( (_scrollController.position.pixels))/(_defaultUsersPerPageCount*130)).toInt()+1;
+  //     // });
+  //  }
 
   @override
   void initState() {
     super.initState();
 
     // initial load
-    pageNo = 1;
-    _futureUserList = fetchUserList(filters,pageNo);
-    cachedUserList[pageNo]=_futureUserList;
+    _hasMore = true;
+    _error = false;
+    _loading = true;
+    _pageNo = 1;
+    _users = [];
+    fetchUserList(filters);
+    _scrollController = ScrollController();
+    // _scrollController.addListener(_scrollListner);
   }
-
-  void nextPage(){
-    setState(() {
-      pageNo+=1;
-      if(cachedUserList[pageNo]!=null)
-      {
-        _futureUserList=cachedUserList[pageNo];
-      }
-      else
-      {
-        _futureUserList =fetchUserList(filters,pageNo);
-        cachedUserList[pageNo]=_futureUserList;
-      }
-    });
-  }
-  
-  void previousPage()
-  {
-    setState(() {
-      if(pageNo>1)
-      {
-        pageNo-=1;
-        if(cachedUserList[pageNo]!=null)
-        {
-          _futureUserList=cachedUserList[pageNo];
-        }
-        else
-        {
-          _futureUserList =fetchUserList(filters,pageNo);
-          cachedUserList[pageNo]=_futureUserList;
-        }
-      }
-    });
-  }
-
   void changePage(int page)
   {
-     setState(() {
-      pageNo=page;
-      if(cachedUserList[pageNo]!=null)
-      {
-        _futureUserList=cachedUserList[pageNo];
-      }
-      else
-      {
-        _futureUserList =fetchUserList(filters,pageNo);
-        cachedUserList[pageNo]=_futureUserList;
-      }
-    });
+    for(int i=_pageNo;i<=page;i++)
+    {
+      fetchUserList(filters);
+    }
+    _scrollController.jumpTo((page*130*_defaultUsersPerPageCount).toDouble());
   }
 
-  void refreshPage(){
-    setState(() {
-        _futureUserList =fetchUserList(filters,pageNo);
-        cachedUserList[pageNo]=_futureUserList;
-    });
-  }
+void refreshPage(){
+  setState(() {
+    _users.clear();
+    _hasMore = true;
+    _error = false;
+    _loading = true;
+    _pageNo=1;
+  });
+  fetchUserList(filters);
+}
 
-  void applyFilters(HashMap<String,String> newFilters)
-  {
+   void applyFilters(HashMap<String,String> newFilters)
+   {
     setState(() {
       filters = newFilters;
-      cachedUserList.clear();
-      _futureUserList = fetchUserList(filters,pageNo);
-      cachedUserList[pageNo] = _futureUserList;
+      refreshPage();
     });
    
-  }
-
+   }
+ 
   @override
   Widget build(BuildContext context)
   {
-    return new FutureBuilder<List<User>>(
-          future: _futureUserList,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.done) {
-              if (snapshot.hasData) {
-                List<User> users = snapshot.data;
-                return RefreshIndicator( 
-                  child:ListView(
-                    shrinkWrap: true,
-                    physics: ScrollPhysics(),
-                    children: <Widget>[
-                      //Paging Row implementation
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: <Widget>[
-                          IconButton(
-                            icon: Icon(Icons.arrow_back),
-                            onPressed:previousPage
-                            ),
-                            Text('Pages    '),
-                            Container(
-                              height: 28,
-                              width: 25,
-                              child: Text(
-                                '${pageNo}',
-                                style: TextStyle(color:Colors.blue[800],fontWeight: FontWeight.w900,fontSize: 20) ,
+
+      //ListView of users data
+      if (_users.isEmpty) {
+        if (_loading) {
+          return Center(
+              child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: CircularProgressIndicator(),
+          ));
+        } else if (_error) {
+          return Center(
+              child: InkWell(
+            onTap: () {
+              setState(() {
+                _loading = true;
+                _error = false;
+                fetchUserList(filters);
+              });
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text("Error while loading photos, tap to try agin"),
+            ),
+          ));
+        }
+      } else {
+          return Stack(
+            children: <Widget>[
+                 Container(
+                   margin: EdgeInsets.only(top:50),
+                   child: RefreshIndicator(
+                    child:ListView.builder( 
+                    physics: BouncingScrollPhysics(),
+                    controller: _scrollController,
+                    itemCount: _users.length + (_hasMore ? 1 : 0),
+                    itemBuilder:(context,index){
+                    
+                        if (index == _users.length - _nextPageThreshold) {
+                          fetchUserList(filters);
+                        }
+                          if (index == _users.length) {
+                            if (_error) {
+                              return Center(
+                                  child: InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _loading = true;
+                                    _error = false;
+                                    fetchUserList(filters);
+                                  });
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Text("Error while loading photos, tap to try agin"),
                                 ),
-                            ),
-                            new GestureDetector(
-                              child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+1}')
-                                ),
-                              onTap:(){ changePage(pageNo+1); },
-                            ),
-                            new GestureDetector(
-                             child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+2}')
-                                ),
-                              onTap:(){ changePage(pageNo+2);},
-                            ),
-                            new GestureDetector(
-                             child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+3}')
-                                ),
-                              onTap:(){ changePage(pageNo+3);},
-                            ),
-                            new GestureDetector(
-                              child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+4}')
-                                ),
-                              onTap:(){ changePage(pageNo+4);},
-                            ),
-                            // new GestureDetector(
-                            //   child: Card(child:Container(
-                            //     height: 30,
-                            //     width: 30,
-                            //     alignment: Alignment.center,
-                            //     child: Text('${pageNo+4}')
-                            //     )),
-                            //   onTap:(){ changePage(pageNo+4);},
-                            // ),
-                          IconButton(
-                            icon: Icon(Icons.arrow_forward),
-                            onPressed:nextPage
-                            ),
-                        ],
-                      ),
-                      //ListView of users data
-                      Container(
-                        margin: EdgeInsets.symmetric(vertical: 5),
-                        width: MediaQuery.of(context).size.width,
-                        child: new ListView.builder(
-                          shrinkWrap: true,
-                          physics: ScrollPhysics(),
-                          itemCount: users.length,
-                          itemBuilder:(context,index){
-                            return UserCard(context:context,user:users[index],callback:(val){
-                              if(val==null)
-                              {
-                                print("inside delete");                                
-                                setState(() {
-                                  users.removeAt(index);
-                                  _futureUserList = Future.value(users);
-                                  cachedUserList[pageNo] = _futureUserList;
-                                });
-                                
-                                return ;
-                              }
-                              bool flag= true;
-                              // for(List<String> filter in filters)
-                              // {
-                              //   if(!filter.contains(val.gender) && !filter.contains(val.status))
-                              //     flag = false; 
-                              // }
-                              if(!filters.containsValue(val.gender) && !filters.containsValue(val.status))
-                                flag = false;
-                              if(filters.length==0 || flag)
-                              {
-                                cachedUserList[pageNo].then((value) => {
-                                  for(int i=0;i<value.length;i++)
-                                  {
-                                    if(value[i].id==val.id)
-                                    {
-                                      value[i]=val
-                                    }
-                                  },
-                                  cachedUserList[pageNo] = Future<List<User>>.value(value)
-                                });
-                              }
-                              else
-                              {
-                                setState(() {
-                                  _futureUserList = fetchUserList(filters,pageNo);
-                                  cachedUserList[pageNo] = _futureUserList;
-                                });
-                              }
-                            });
+                              ));
+                            } else {
+                              return Center(
+                                  child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: CircularProgressIndicator(),
+                              ));
+                            }
                           }
-                        ),
-                      ),
-                    ],
-                  ),
-                  onRefresh:()async{ refreshPage();},
-                );
-                } else if (snapshot.hasError) {
-                  return Text("${snapshot.error}");
-                }
-            }
-            // By default, show a loading spinner.
-            return Center(child:CircularProgressIndicator());
-          },
-        );
+                      return Container(
+                        key: UniqueKey(),
+                        child: new UserCard(context:context,user:_users[index],callback:(val){ 
+                                if(val==null)
+                                {
+                                  print("inside delete");                                
+                                  setState(() {
+                                    _users.removeAt(index);
+                                  });
+                                  return ;
+                                }
+                                bool flag= true;
+                                if(!filters.containsValue(val.gender) && !filters.containsValue(val.status))
+                                  flag = false;
+                                if(filters.length==0 || flag)
+                                {
+                                  for(int i=0;i<_users.length;i++)
+                                  {
+                                    if(_users[i].id==val.id)
+                                    {
+                                      _users[i]=val;
+                                    }
+                                  }
+                                }
+                                else
+                                {
+                                  refreshPage();
+                                }
+                        }),
+                      );
+                    }
+                   ),
+                   onRefresh: ()async{ refreshPage();},
+                   ),
+                 ),
+                 Pagination(sc:_scrollController) 
+            ],
+          );
+        }
+        return Container();
   }
+  
 }
