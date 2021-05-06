@@ -66,7 +66,7 @@ class _MyPopUpDialog extends State<PopUpDialog>{
   var callback ;
 
   _MyPopUpDialog({this.context,this.user,this.callback});
-  
+ 
   @override
   void initState() {
     super.initState();

@@ -121,7 +121,7 @@ class MainScreen extends StatefulWidget{
   _MainScreenState createState() =>_MainScreenState();
 }
 class _MainScreenState extends State<MainScreen>{
-  int pageNo = 1;
+  int pageNo;
   int totalPages ;
   Future<List<User>> _futureUserList ;
   HashMap<String,String> filters = new HashMap<String, String>();
@@ -133,8 +133,9 @@ class _MainScreenState extends State<MainScreen>{
     super.initState();
 
     // initial load
-     _futureUserList = fetchUserList(filters,1);
-     cachedUserList[1]=_futureUserList;
+    pageNo = 1;
+    _futureUserList = fetchUserList(filters,pageNo);
+    cachedUserList[pageNo]=_futureUserList;
   }
 
   void nextPage(){
@@ -213,6 +214,7 @@ class _MainScreenState extends State<MainScreen>{
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.done) {
               if (snapshot.hasData) {
+                List<User> users = snapshot.data;
                 return RefreshIndicator( 
                   child:ListView(
                     shrinkWrap: true,
@@ -267,6 +269,15 @@ class _MainScreenState extends State<MainScreen>{
                                 ),
                               onTap:(){ changePage(pageNo+4);},
                             ),
+                            // new GestureDetector(
+                            //   child: Card(child:Container(
+                            //     height: 30,
+                            //     width: 30,
+                            //     alignment: Alignment.center,
+                            //     child: Text('${pageNo+4}')
+                            //     )),
+                            //   onTap:(){ changePage(pageNo+4);},
+                            // ),
                           IconButton(
                             icon: Icon(Icons.arrow_forward),
                             onPressed:nextPage
@@ -280,9 +291,20 @@ class _MainScreenState extends State<MainScreen>{
                         child: new ListView.builder(
                           shrinkWrap: true,
                           physics: ScrollPhysics(),
-                          itemCount: snapshot.data.length,
+                          itemCount: users.length,
                           itemBuilder:(context,index){
-                            return UserCard(context:context,user:snapshot.data[index],callback:(val){
+                            return UserCard(context:context,user:users[index],callback:(val){
+                              if(val==null)
+                              {
+                                print("inside delete");                                
+                                setState(() {
+                                  users.removeAt(index);
+                                  _futureUserList = Future.value(users);
+                                  cachedUserList[pageNo] = _futureUserList;
+                                });
+                                
+                                return ;
+                              }
                               bool flag= true;
                               // for(List<String> filter in filters)
                               // {
