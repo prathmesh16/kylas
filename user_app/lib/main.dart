@@ -139,7 +139,6 @@ class _MainScreenState extends State<MainScreen>{
           _loading = false;
           _pageNo = _pageNo + 1;
           _users.addAll(fetchedUsers);
-          //Toast.show('${_pageNo}', context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
       });
     }
     catch(e)

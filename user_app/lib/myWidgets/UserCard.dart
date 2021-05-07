@@ -135,6 +135,7 @@ class _MyUserCard extends State<UserCard>
               Row(
                 children: [
                   IconButton(
+                    
                     iconSize: 20,
                     icon: Icon(Icons.info_outline,color: Colors.grey[500]),
                     alignment: Alignment.centerRight,
