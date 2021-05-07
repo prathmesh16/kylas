@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:toast/toast.dart';
+import 'package:user_app/main2.dart';
 import 'package:user_app/myWidgets/Pagination.dart';
 import 'dart:convert';
 import './models/User.dart';
@@ -45,6 +46,12 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: Text('User App'),
           actions: [
+            new IconButton(
+                  icon: Icon(Icons.autorenew_sharp,size: 30,),
+                  onPressed: (){
+                     Navigator.of(context).push(MaterialPageRoute(builder: (context) => MyApp2()));
+                  }
+                ),
             new Stack(
               children:<Widget> [
                 new IconButton(
@@ -60,16 +67,16 @@ class _MyAppState extends State<MyApp> {
                     );
                   }
                 ),
-                 Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red),
-                    alignment: Alignment.center,
-                    child: Text('0'),
-                  ),
-                )
+                //  Positioned(
+                //   top: 0,
+                //   right: 0,
+                //   child: Container(
+                //     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                //     decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red),
+                //     alignment: Alignment.center,
+                //     child: Text('0'),
+                //   ),
+                // )
               ],
             )
             
@@ -132,7 +139,7 @@ class _MainScreenState extends State<MainScreen>{
           _loading = false;
           _pageNo = _pageNo + 1;
           _users.addAll(fetchedUsers);
-          Toast.show('${_pageNo}', context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
+          //Toast.show('${_pageNo}', context, duration: Toast.LENGTH_SHORT, gravity:  Toast.BOTTOM);
       });
     }
     catch(e)
@@ -226,6 +233,7 @@ void refreshPage(){
           return Stack(
             children: <Widget>[
                  Container(
+                   color: Colors.grey[200],
                    margin: EdgeInsets.only(top:50),
                    child: RefreshIndicator(
                     child:ListView.builder( 

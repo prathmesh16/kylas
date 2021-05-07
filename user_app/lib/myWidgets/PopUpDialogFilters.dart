@@ -85,12 +85,19 @@ _MyPopUpDialogFilters({this.context,this.callback,this.filters});
   Widget build(BuildContext context) {
     return new AlertDialog(
      title: const Text("Filters"),
-     content: Container(
+     content: 
+     Container(
        width: MediaQuery.of(context).size.width,
        child: new Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
+             const Divider(
+             height: 40,
+             thickness: 1, 
+             indent: 20,
+             endIndent: 20,
+            ),
             Text("Gender"),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -134,6 +141,12 @@ _MyPopUpDialogFilters({this.context,this.callback,this.filters});
                     }
                     ),
               ],
+            ),
+            const Divider(
+             height: 40,
+             thickness: 1, 
+             indent: 20,
+             endIndent: 20,
             ),
             Text("Status"),
             Row(
@@ -250,6 +263,12 @@ _MyPopUpDialogFilters({this.context,this.callback,this.filters});
             //     ),),
             //   ],
             // )
+            const Divider(
+             height: 40,
+             thickness: 1, 
+             indent: 20,
+             endIndent: 20,
+            ),
           ],
        ),
      ),

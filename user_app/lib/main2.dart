@@ -10,7 +10,7 @@ import 'package:flutter/foundation.dart';
 import './myWidgets/PopUpDialogAddUser.dart';
 import './myWidgets/PopUpDialogFilters.dart';
 
-void main() => runApp(MaterialApp(home:MyApp()));
+// void main() => runApp(MaterialApp(home:MyApp()));
 
 //converting response data into json list
 List<User> parseUsersList(String body){
@@ -19,39 +19,15 @@ List<User> parseUsersList(String body){
   return data.map<User>((json) => User.fromJson(json)).toList();
 }
 
-//GET request to fetch users list
-Future < List<User>> fetchUserList(HashMap<String,String> filters,int page) async{
-  String str="&&";
-  // for(int i=0;i<filters.length;i++)
-  // {
-  //   if(i>0)
-  //   {
-  //     str+="&&";
-  //   }
-  //   str += filters[i][0]+"="+filters[i][1];
-  // }
-  int i=0;
-  
-  filters.forEach((key, value) {
-    if(i>0)
-    {
-      str+="&&";
-    }
-    str += key+"="+value;
-    i++;
-  });
 
-  final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}${(str.length>2)?str:''}");
-  return compute(parseUsersList,response.body);
-}
 
 //Application 
-class MyApp extends StatefulWidget {
+class MyApp2 extends StatefulWidget {
   @override
-  _MyAppState createState() =>_MyAppState();
+  _MyApp2State createState() =>_MyApp2State();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyApp2State extends State<MyApp2> {
 
   final GlobalKey<_MainScreenState> _mainScreenState = GlobalKey<_MainScreenState>();
   void applyFilters(HashMap<String,String> newFIlters)
@@ -82,16 +58,16 @@ class _MyAppState extends State<MyApp> {
                     );
                   }
                 ),
-                 Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red),
-                    alignment: Alignment.center,
-                    child: Text('0'),
-                  ),
-                )
+                //  Positioned(
+                //   top: 0,
+                //   right: 0,
+                //   child: Container(
+                //     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                //     decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red),
+                //     alignment: Alignment.center,
+                //     child: Text('0'),
+                //   ),
+                // )
               ],
             )
             
@@ -127,7 +103,30 @@ class _MainScreenState extends State<MainScreen>{
   HashMap<String,String> filters = new HashMap<String, String>();
   //storage to cache users data
   var cachedUserList = <int, Future<List<User>>>{};
+  //GET request to fetch users list
+  Future < List<User>> fetchUserList(HashMap<String,String> filters,int page) async{
+    String str="&&";
+    int i=0;
+    
+    filters.forEach((key, value) {
+      if(i>0)
+      {
+        str+="&&";
+      }
+      str += key+"="+value;
+      i++;
+    });
 
+    final http.Response response = await http.get("https://gorest.co.in/public-api/users?page=${page}${(str.length>2)?str:''}");
+    var tmp =json.decode(response.body);
+    totalPages = tmp["meta"]["pagination"]["pages"];
+      if(totalPages<pageNo)
+      {
+        pageNo=totalPages;
+        refreshPage();
+      }
+    return compute(parseUsersList,response.body);
+  }
   @override
   void initState() {
     super.initState();
@@ -140,7 +139,8 @@ class _MainScreenState extends State<MainScreen>{
 
   void nextPage(){
     setState(() {
-      pageNo+=1;
+      if(pageNo<totalPages)
+        pageNo+=1;
       if(cachedUserList[pageNo]!=null)
       {
         _futureUserList=cachedUserList[pageNo];
@@ -225,50 +225,87 @@ class _MainScreenState extends State<MainScreen>{
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: <Widget>[
                           IconButton(
-                            icon: Icon(Icons.arrow_back),
+                            icon: Icon(Icons.fast_rewind_sharp),
+                            onPressed:(){changePage(1);}
+                            ),
+                          IconButton(
+                            icon: Icon(Icons.arrow_back_ios),
                             onPressed:previousPage
                             ),
-                            Text('Pages    '),
-                            Container(
-                              height: 28,
-                              width: 25,
-                              child: Text(
-                                '${pageNo}',
-                                style: TextStyle(color:Colors.blue[800],fontWeight: FontWeight.w900,fontSize: 20) ,
-                                ),
+                            SizedBox(
+                              height: 50, 
+                              child:  ListView.builder(
+                              scrollDirection: Axis.horizontal,
+
+                              shrinkWrap: true,
+                              itemCount:5,
+                              itemBuilder:(context,index){
+                                 if(totalPages-pageNo>5)
+                                  return new GestureDetector(
+                                    child: Container(
+                                      margin:EdgeInsets.all(5),
+                                      alignment: Alignment.center,
+                                      height: 25,
+                                      width: 25,
+                                      child: Text('${pageNo+index}',style:(index==0)?TextStyle(color:Colors.blue[800],fontWeight: FontWeight.w900,fontSize: 20):null ,)
+                                      ),
+                                    onTap:(){ changePage(pageNo+index); },
+                                  );
+                                  else
+                                    return new GestureDetector(
+                                      child: Container(
+                                        margin:EdgeInsets.all(5),
+                                        alignment: Alignment.center,
+                                        height: 25,
+                                        width: 25,
+                                        child: Text('${pageNo+index-4}',style:(index==4)?TextStyle(color:Colors.blue[800],fontWeight: FontWeight.w900,fontSize: 20):null ,)
+                                        ),
+                                      onTap:(){ changePage(pageNo+index-4); },
+                                    );
+                              } 
+                            
                             ),
-                            new GestureDetector(
-                              child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+1}')
-                                ),
-                              onTap:(){ changePage(pageNo+1); },
                             ),
-                            new GestureDetector(
-                             child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+2}')
-                                ),
-                              onTap:(){ changePage(pageNo+2);},
-                            ),
-                            new GestureDetector(
-                             child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+3}')
-                                ),
-                              onTap:(){ changePage(pageNo+3);},
-                            ),
-                            new GestureDetector(
-                              child: Container(
-                                height: 20,
-                                width: 20,
-                                child: Text('${pageNo+4}')
-                                ),
-                              onTap:(){ changePage(pageNo+4);},
-                            ),
+                            // Container(
+                            //   height: 28,
+                            //   width: 25,
+                            //   child: Text(
+                            //     '${pageNo}',
+                            //     style: TextStyle(color:Colors.blue[800],fontWeight: FontWeight.w900,fontSize: 20) ,
+                            //     ),
+                            // ),
+                            // new GestureDetector(
+                            //   child: Container(
+                            //     height: 20,
+                            //     width: 20,
+                            //     child: Text('${pageNo+1}')
+                            //     ),
+                            //   onTap:(){ changePage(pageNo+1); },
+                            // ),
+                            // new GestureDetector(
+                            //  child: Container(
+                            //     height: 20,
+                            //     width: 20,
+                            //     child: Text('${pageNo+2}')
+                            //     ),
+                            //   onTap:(){ changePage(pageNo+2);},
+                            // ),
+                            // new GestureDetector(
+                            //  child: Container(
+                            //     height: 20,
+                            //     width: 20,
+                            //     child: Text('${pageNo+3}')
+                            //     ),
+                            //   onTap:(){ changePage(pageNo+3);},
+                            // ),
+                            // new GestureDetector(
+                            //   child: Container(
+                            //     height: 20,
+                            //     width: 20,
+                            //     child: Text('${pageNo+4}')
+                            //     ),
+                            //   onTap:(){ changePage(pageNo+4);},
+                            // ),
                             // new GestureDetector(
                             //   child: Card(child:Container(
                             //     height: 30,
@@ -279,13 +316,18 @@ class _MainScreenState extends State<MainScreen>{
                             //   onTap:(){ changePage(pageNo+4);},
                             // ),
                           IconButton(
-                            icon: Icon(Icons.arrow_forward),
+                            icon: Icon(Icons.arrow_forward_ios),
                             onPressed:nextPage
+                            ),
+                          IconButton(
+                            icon: Icon(Icons.fast_forward_sharp),
+                            onPressed:(){changePage(totalPages);}
                             ),
                         ],
                       ),
                       //ListView of users data
                       Container(
+                        color: Colors.grey[200],
                         margin: EdgeInsets.symmetric(vertical: 5),
                         width: MediaQuery.of(context).size.width,
                         child: new ListView.builder(

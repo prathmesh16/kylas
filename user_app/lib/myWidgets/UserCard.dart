@@ -60,7 +60,7 @@ class _MyUserCard extends State<UserCard>
   {
     return new PopupMenuButton<String>(
       padding: EdgeInsets.zero,
-      icon: Icon(Icons.more_vert),
+      icon: Icon(Icons.more_vert,color: Colors.grey[500],),
       onSelected: (String ch){
         if(ch=="Edit")
         {
